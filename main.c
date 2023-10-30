@@ -1,45 +1,54 @@
 #include <dirent.h>
 #include <stdio.h>
+#include <string.h>
 
-int listdir(const char *path)
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#define is_source_file(file_name)                     \
+	((file_name)[strlen(file_name) - 2] == '.' && \
+	 (file_name)[strlen(file_name) - 1] == 'c')
+
+const char STRING_BUFFER_TERMINATOR = 0x85;
+
+int get_source_file_name(const char *path, char *buffer)
 {
-	printf("Listing entries for [%s]:\n", path);
+	unsigned buffer_index = 0;
 	struct dirent *entry;
 	DIR *dp;
+	int ret;
 
 	dp = opendir(path);
-	if (!dp) {
-		perror("Failed to open directory");
+	if (!dp)
 		return -1;
-	}
 
 	while ((entry = readdir(dp))) {
-		switch (entry->d_type) {
-		case DT_DIR:
-			printf("D");
-			break;
-		case DT_REG:
-			printf("F");
-			break;
-		default:
-			printf("U");
-			break;
+		if (entry->d_type == DT_REG && is_source_file(entry->d_name)) {
+			strcpy(buffer + buffer_index, entry->d_name);
+			buffer_index += strlen(entry->d_name) + 1;
 		}
-		printf("\t %s\n", entry->d_name);
 	}
 
-	closedir(dp);
+	ret = closedir(dp);
+	if (ret) {
+		return ret;
+	}
+
 	return 0;
 }
 
 int main(int argc, char **argv)
 {
-	if (argc == 1) {
-		listdir(".");
-	} else {
-		for (int i = 1; i < argc; i++) {
-			listdir(argv[i]);
-		}
+	int ret;
+	char buffer[255];
+	memset(buffer, STRING_BUFFER_TERMINATOR, ARRAY_SIZE(buffer));
+	ret = get_source_file_name(".", buffer);
+	if (ret) {
+		perror("Failed to get file names for C source files\n");
+		return ret;
+	}
+	for (char *file_name = buffer; *file_name != STRING_BUFFER_TERMINATOR;
+	     file_name++) {
+		printf("%s\n", file_name);
+		file_name += strlen(file_name);
 	}
 	return 0;
 }
