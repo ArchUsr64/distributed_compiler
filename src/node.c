@@ -1,4 +1,5 @@
 #include <netdb.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 
@@ -20,6 +21,7 @@ int run_node()
 	listen(socket_descriptor, 5);
 	printf("Server is running...\n");
 	while (1) {
+		int i;
 		printf("Waiting for connection...\n");
 		accept_descriptor = accept(socket_descriptor,
 					   (struct sockaddr *)&server_address,
@@ -29,11 +31,21 @@ int run_node()
 		int bytes_read =
 			recv(accept_descriptor, buffer, sizeof(buffer), 0);
 		printf("Received file data:\n\n");
-		for (int i = 0; i < bytes_read && buffer[i] != EOF; i++) {
+		for (i = 0; i < bytes_read && buffer[i] != EOF; i++) {
 			printf("%c", buffer[i]);
 		}
 		printf("\n");
 
+		FILE *file_ptr = fopen("out.c", "w");
+		if (!file_ptr) {
+			printf("[ERROR] Failed to open file\n");
+			return EXIT_FAILURE;
+		}
+		fwrite(buffer, 1, i, file_ptr);
+		fclose(file_ptr);
+
 		close(accept_descriptor);
 	}
+
+	return EXIT_SUCCESS;
 }
