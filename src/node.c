@@ -3,6 +3,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#define OUT_PATH "out.c"
+#define COMPILE_COMMAND "gcc -c "OUT_PATH
+
 int run_node()
 {
 	int bind_descriptor, socket_descriptor, accept_descriptor;
@@ -34,17 +37,20 @@ int run_node()
 		for (i = 0; i < bytes_read && buffer[i] != EOF; i++) {
 			printf("%c", buffer[i]);
 		}
-		printf("\n");
 
-		FILE *file_ptr = fopen("out.c", "w");
+		FILE *file_ptr = fopen(OUT_PATH, "w");
 		if (!file_ptr) {
-			printf("[ERROR] Failed to open file\n");
+			printf("[ERROR] Failed to open file: '%s'\n", OUT_PATH);
 			return EXIT_FAILURE;
 		}
 		fwrite(buffer, 1, i, file_ptr);
 		fclose(file_ptr);
 
 		close(accept_descriptor);
+
+		printf("Compiling the received file\n");
+		system(COMPILE_COMMAND);
+		printf("\n");
 	}
 
 	return EXIT_SUCCESS;
