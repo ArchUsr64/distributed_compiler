@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 	if (argv[1][0] == 'h') {
-		return run_host(argc, argv);
+		return run_host(argv[2]);
 	}
 	else {
 		return run_node();
